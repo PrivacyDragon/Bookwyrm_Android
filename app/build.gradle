@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "nl.privacydragon.bookwyrm"
-        minSdk 21
+        minSdk 23
         targetSdk 31
         versionCode 1
         versionName "1.0"

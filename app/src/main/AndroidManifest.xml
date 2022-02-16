@@ -3,7 +3,7 @@
     package="nl.privacydragon.bookwyrm">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher_wyrm"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_wyrm_round"
