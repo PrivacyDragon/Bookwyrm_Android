@@ -9,8 +9,8 @@ android {
         applicationId "nl.privacydragon.bookwyrm"
         minSdk 23
         targetSdk 31
-        versionCode 2
-        versionName "1.1.0"
+        versionCode 3
+        versionName "1.2.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
