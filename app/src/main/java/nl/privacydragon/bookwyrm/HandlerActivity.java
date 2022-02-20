@@ -60,10 +60,15 @@ public class HandlerActivity extends AppCompatActivity {
         String pathMaybe = appLinkData.getPath();
         String toGoServer = "bla";
         if (pathMaybe.contains("user")) {
-            //If the path contains 'user', it is a user profile.
-            String notAtUser = pathMaybe.substring(pathMaybe.indexOf("user") + 5); //This line gets the username.
-            String atUser = notAtUser + "@" + appLinkData.getHost(); //This appends @[HOST] to the string, so we have the full username thing needed.
-            toGoServer = "https://" + server + "/user/" + atUser;
+            //If the path contains 'user', it is a user profile, unless it is followed by something like 'review'.
+            if (pathMaybe.contains("review") || pathMaybe.contains("generatednote") || pathMaybe.contains("quotation") || pathMaybe.contains("comment") ) {
+                toGoServer = "https://" + appLinkData.getHost() + pathMaybe;
+            }
+            else {
+                String notAtUser = pathMaybe.substring(pathMaybe.indexOf("user") + 5); //This line gets the username.
+                String atUser = notAtUser + "@" + appLinkData.getHost(); //This appends @[HOST] to the string, so we have the full username thing needed.
+                toGoServer = "https://" + server + "/user/" + atUser;
+            }
         } else {
             startActivity(new Intent(HandlerActivity.this, nl.privacydragon.bookwyrm.StartActivity.class));
         }
@@ -132,7 +137,12 @@ public class HandlerActivity extends AppCompatActivity {
 
                 view.loadUrl("javascript:(function() { document.getElementById('id_password').value = '" + passw + "'; ;})()");
                 view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
-                view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
+                view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "' && !/(review|generatednote|quotation|comment)/i.test(window.location.href)) { document.getElementsByName(\"login\")[0].submit();} ;})()");
+                view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
+                view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment)/i.test(window.location.href)) { document.getElementsByClassName(\"block\")[0].innerHTML = ` <a href=\"https://"+ server  +"\" class=\"button\" data-back=\"\">\n" +
+                        "        <span class=\"icon icon-arrow-left\" aria-hidden=\"true\"></span>\n" +
+                        "        <span><b>Back to homeserver</b></span>\n" +
+                        "    </a>`;} ;})()");
 
             }
         });
@@ -144,11 +154,19 @@ public class HandlerActivity extends AppCompatActivity {
     private class MyWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            // ATTENTION: This was auto-generated to handle app links.
+            Intent appLinkIntent = getIntent();
+            String appLinkAction = appLinkIntent.getAction();
+            Uri appLinkData = appLinkIntent.getData();
+            // End of auto-generated stuff
+            String strangeHost = appLinkData.getHost();
             SharedPreferences sharedPref = HandlerActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
             String defaultValue = "none";
             String server = sharedPref.getString(getString(R.string.server), defaultValue);
             if (server.equals(request.getUrl().getHost())) {
                 //If the server is the same as the bookwyrm, load it in the webview.
+                return false;
+            } else if (strangeHost.equals(request.getUrl().getHost())) {
                 return false;
             }
             // Otherwise, it should go to the default browser instead.
