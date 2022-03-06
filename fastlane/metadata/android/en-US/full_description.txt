@@ -1,2 +1,2 @@
-This is a, probably crappy, Android client for BookWyrm.
+This is an Android client for BookWyrm.
 It is just BookWyrm put into a webview element, nothing special.
