@@ -1,0 +1,3 @@
+Initial release for F-Droid.
+
+* Added support for four more BookWyrm instances.

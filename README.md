@@ -5,4 +5,4 @@ It can also open links to userpages of Bookwyrm users.
 
 This application works on: Android 6 and above.
 
-And if you want to know, I am @StoryDragon@wyrms.de on BookWyrm.
+And if you want to know, I am `@StoryDragon@wyrms.de` on BookWyrm.
