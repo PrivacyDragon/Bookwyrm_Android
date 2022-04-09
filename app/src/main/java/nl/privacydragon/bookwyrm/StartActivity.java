@@ -1,16 +1,31 @@
 package nl.privacydragon.bookwyrm;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.v7.app.AppCompatActivity;
+//import android.support.v7.app.AppCompatActivity;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,13 +46,24 @@ import javax.crypto.spec.GCMParameterSpec;
 
 public class StartActivity extends AppCompatActivity {
     WebView myWebView;
+    ProgressBar LoadIndicator;
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
+        LoadIndicator = (ProgressBar) findViewById(R.id.progressBar3);
         myWebView = (WebView) findViewById(R.id.webview);
         myWebView.getSettings().setJavaScriptEnabled(true);
+        myWebView.addJavascriptInterface(new Object()
+        {
+            @JavascriptInterface           // For API 17+
+            public void performClick()
+            {
+                ScanBarCode();
+
+            }
+        }, "scan");
         //The user credentials are stored in the shared preferences, so first they have to be read from there.
         String defaultValue = "none";
         SharedPreferences sharedPref = StartActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
@@ -109,16 +135,67 @@ public class StartActivity extends AppCompatActivity {
         //A webviewclient thing is needed for some stuff. To automatically log in, the credentials are put in the form by the javascript that is loaded once the page is fully loaded. Then it is automatically submitted if the current page is the login page.
         myWebView.setWebViewClient(new MyWebViewClient(){
             public void onPageFinished(WebView view, String url) {
+                LoadIndicator.setVisibility(View.GONE);
 
                 view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + passw + "'; ;})()");
                 view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = '" + name + "'; ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "/login') { document.getElementsByName(\"login-confirm\")[0].submit();} ;})()");
+                view.loadUrl("javascript:(function() { " +
+                        "const ISBN = document.createElement(\"p\");" +
+                        "ISBN.innerHTML = '<br/>Click to scan ISBN';" +
+                        "ISBN.addEventListener('click', () => {" +
+                        " scan.performClick();" +
+                        "});" +
+                        "const NewCenter = document.createElement(\"center\");" +
+                        "NewCenter.append(ISBN);" +
+                        "nav = document.body;" +
+                        "nav.insertBefore(NewCenter, nav.children[0]);" +
+                        ";})()");
 
             }
         });
         //Here, load the login page of the server. That actually does all that is needed.
         myWebView.loadUrl("https://" + server + "/login");
     }
+    public void ScanBarCode() {
+        String permission = Manifest.permission.CAMERA;
+        int grant = ContextCompat.checkSelfPermission(StartActivity.this, permission);
+        if (grant != PackageManager.PERMISSION_GRANTED) {
+            String[] permission_list = new String[1];
+            permission_list[0] = permission;
+            ActivityCompat.requestPermissions(StartActivity.this, permission_list, 1);
+        }
+
+        IntentIntegrator intentIntegrator = new IntentIntegrator(StartActivity.this);
+        intentIntegrator.setDesiredBarcodeFormats(intentIntegrator.ALL_CODE_TYPES);
+        intentIntegrator.setBeepEnabled(false);
+        intentIntegrator.setCameraId(0);
+        intentIntegrator.setPrompt("SCAN ISBN");
+        intentIntegrator.setBarcodeImageEnabled(false);
+        intentIntegrator.initiateScan();
+
+        //return "blup";
+        //return "bla";
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult Result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (Result != null) {
+            if (Result.getContents() == null) {
+                Toast.makeText(this, "cancelled", Toast.LENGTH_SHORT).show();
+            } else {
+                Log.d("MainActivity", "Scanned");
+                myWebView.loadUrl("Javascript:(function() {document.getElementById('search_input').value = " + Result.getContents() + ";" +
+                        "document.getElementsByTagName('form')[0].submit(); ;})()");
+                LoadIndicator.setVisibility(View.VISIBLE);
+
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         // Check if the key event was the Back button and if there's history
@@ -146,6 +223,11 @@ public class StartActivity extends AppCompatActivity {
             Intent intent = new Intent(Intent.ACTION_VIEW, request.getUrl());
             startActivity(intent);
             return true;
+        }
+
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            LoadIndicator.setVisibility(View.VISIBLE);
         }
     }
 }

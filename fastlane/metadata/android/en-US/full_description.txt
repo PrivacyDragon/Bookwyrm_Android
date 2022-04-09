@@ -1,3 +1,8 @@
-This is an Android client for BookWyrm.
-It is just BookWyrm put into a webview element, nothing special.
+This is an Android client for BookWyrm – a federated social network for tracking your reading, talking about books, writing reviews, and discovering what to read next. It is just BookWyrm put into a webview element, nothing special – but it adds some convenience on top:
+
+* bookwyrm links can be made to open with the app (e.g. clicking on the link to someone's userprofile will open that from your own bookwyrm instance)
+* thanks to that, you can immediately follow them easily if you want.
+* it lets you easily return to your own home timeline when viewing something like posts, on another bookwyrm instance, because the 'back' button is then modified for that.
+* You can also search for books by scanning the ISBN, no matter what instance of Bookwyrm you use.
+
 <b>This application is <u>not</u> an official client!</b> (An official client does not exist yet, as far as I know)

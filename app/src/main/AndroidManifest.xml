@@ -4,6 +4,13 @@
     package="nl.privacydragon.bookwyrm">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature android:name="android.hardware.camera" />
+
+    <meta-data
+        android:name="android.webkit.WebView.MetricsOptOut"
+        android:value="true" />
 
     <application
         android:allowBackup="false"
@@ -15,7 +22,6 @@
         <activity
             android:name=".HandlerActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -23,9 +29,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="wyrms.de"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -34,9 +40,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="bookwyrm.social"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -45,9 +51,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="book.dansmonorage.blue"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -56,9 +62,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="yyyyy.club"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -67,9 +73,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="books.mxhdr.net"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -78,9 +84,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="ziurkes.group.lt"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -89,9 +95,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="books.solarpunk.moe"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -100,9 +106,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="reading.taks.garden"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -111,9 +117,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="bookwyrm.spaceling.sh"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -122,9 +128,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="lire.boitam.eu"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -133,9 +139,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="kirja.casa"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -144,9 +150,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="books.badwolfbay.games"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -155,9 +161,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="books.unexist.dev"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -166,9 +172,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="bookwyrm.cincodenada.com"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -177,9 +183,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="books.underscore.world"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -188,9 +194,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="bookwyrm.tardis.pw"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -199,9 +205,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="tankie.ml"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -210,9 +216,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="masstoc.io"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -221,9 +227,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="books.mennisch.net"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -232,9 +238,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="bookwyrm.pt"
-                    android:pathPrefix="/user/" />
+                    android:pathPrefix="/user/"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
         <activity

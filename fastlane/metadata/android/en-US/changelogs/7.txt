@@ -1,0 +1,5 @@
+* Added a loading bar
+* You can now scan ISBN's, on any instance!
+
+More technical change:
+* Mitigated the project to use Androidx libraries, for that is necessary for the ISBN scanning...
