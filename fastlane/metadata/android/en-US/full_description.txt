@@ -6,3 +6,5 @@ This is an Android client for BookWyrm – a federated social network for tracki
 * You can also search for books by scanning the ISBN, no matter what instance of Bookwyrm you use.
 
 <b>This application is <u>not</u> an official client!</b> (An official client does not exist yet, as far as I know)
+
+The ISBN scanning feature is created with the zxing-android-embedded library.

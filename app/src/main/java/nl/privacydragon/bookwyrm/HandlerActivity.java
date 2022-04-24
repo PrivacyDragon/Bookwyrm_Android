@@ -75,9 +75,11 @@ public class HandlerActivity extends AppCompatActivity {
         myWebView.addJavascriptInterface(new Object()
         {
             @JavascriptInterface           // For API 17+
-            public void performClick()
+            public void performClick(String what)
             {
-                ScanBarCode();
+                if (!what.contains("[object Window]")) { //For some reason the function has to be called when the event listener is attached to the button. So, by adding in 'this', it is possible to make sure to only act when the thing that called the function is NOT the window, but the button.
+                    ScanBarCode();
+                }
 
             }
         }, "scan");
@@ -184,15 +186,21 @@ public class HandlerActivity extends AppCompatActivity {
                         "        <span><b>Back to homeserver</b></span>\n" +
                         "    </a>`;} ;})()");
                 view.loadUrl("javascript:(function() { " +
-                        "const ISBN = document.createElement(\"p\");" +
-                        "ISBN.innerHTML = '<br/>Click to scan ISBN';" +
-                        "ISBN.addEventListener('click', () => {" +
-                        " scan.performClick();" +
-                        "});" +
-                        "const NewCenter = document.createElement(\"center\");" +
-                        "NewCenter.append(ISBN);" +
-                        "nav = document.body;" +
-                        "nav.insertBefore(NewCenter, nav.children[0]);" +
+                        "if (document.querySelectorAll(\"[data-modal-open]\")[0]) {" +
+                            "let ISBN_Button = document.querySelectorAll(\"[data-modal-open]\")[0];" +
+                            "ISBN_Button.replaceWith(ISBN_Button.cloneNode(true));" +
+                            "document.querySelectorAll(\"[data-modal-open]\")[0].addEventListener('click', () => {" +
+                                "scan.performClick(this);" +
+                            "});" +
+                        "} else {" +
+                            "let ISBN = document.createElement(\"div\");" +
+                            "ISBN.class = 'control';" +
+                            //"ISBN.class = 'button';" +
+                            //"ISBN.type = 'button';" +
+                            "ISBN.innerHTML = '<button class=\"button\" type=\"button\" onclick=\"scan.performClick(this)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"none\" d=\"M0 0h24v24H0z\"/><path d=\"M4 5v14h16V5H4zM3 3h18a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm3 4h3v10H6V7zm4 0h2v10h-2V7zm3 0h1v10h-1V7zm2 0h3v10h-3V7z\"/></svg><span class=\"is-sr-only\">Search</span></button>';" +
+                            "nav = document.getElementsByClassName(\"field has-addons\")[0];" +
+                            "nav.appendChild(ISBN);" +
+                        "}" +
                         ";})()");
             }
         });
@@ -232,7 +240,7 @@ public class HandlerActivity extends AppCompatActivity {
         }
 
         IntentIntegrator intentIntegrator = new IntentIntegrator(HandlerActivity.this);
-        intentIntegrator.setDesiredBarcodeFormats(intentIntegrator.ALL_CODE_TYPES);
+        intentIntegrator.setDesiredBarcodeFormats(intentIntegrator.EAN_13);
         intentIntegrator.setBeepEnabled(true);
         intentIntegrator.setCameraId(0);
         intentIntegrator.setPrompt("SCAN");
