@@ -181,10 +181,18 @@ public class HandlerActivity extends AppCompatActivity {
                 view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "' && !/(review|generatednote|quotation|comment)/i.test(window.location.href)) { document.getElementsByName(\"login\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
-                view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment)/i.test(window.location.href)) { document.getElementsByClassName(\"block\")[0].innerHTML = ` <a href=\"https://"+ server  +"\" class=\"button\" data-back=\"\">\n" +
-                        "        <span class=\"icon icon-arrow-left\" aria-hidden=\"true\"></span>\n" +
-                        "        <span><b>Back to homeserver</b></span>\n" +
-                        "    </a>`;} ;})()");
+                view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment)/i.test(window.location.href)) {" +
+                                "blocks = document.getElementsByClassName('block');" +
+                                "for (let element of blocks){" +
+                                        "if (element.localName == 'header') { " +
+                                            "element.innerHTML = ` <a href=\"https://"+ server  +"\" class=\"button\" data-back=\"\">\n" +
+                                                "<span class=\"icon icon-arrow-left\" aria-hidden=\"true\"></span>\n" +
+                                                "<span><b>Back to homeserver</b></span>\n" +
+                                            "</a>`;" +
+                                            "break;" +
+                                        "}" +
+                                "}" +
+                        "} ;})()");
                 view.loadUrl("javascript:(function() { " +
                         "if (document.querySelectorAll(\"[data-modal-open]\")[0]) {" +
                             "let ISBN_Button = document.querySelectorAll(\"[data-modal-open]\")[0];" +

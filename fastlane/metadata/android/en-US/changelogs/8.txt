@@ -2,3 +2,4 @@
 * The ISBN-scanning feature now works by simply clicking the ISBN button that is used by the instances that have scanning already available.
 * For instances that do not support the scanning server-side, there is now instead of the text a button for ISBN-scanning, similar to the standard one.
 * Small bug-fix, so now only ISBN-codes (And other EAN-13 codes) will be scanned.
+* Another bug-fix. The modified back button works again.
