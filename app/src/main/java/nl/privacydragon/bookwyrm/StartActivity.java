@@ -54,6 +54,7 @@ public class StartActivity extends AppCompatActivity {
         setContentView(R.layout.activity_start);
         LoadIndicator = (ProgressBar) findViewById(R.id.progressBar3);
         myWebView = (WebView) findViewById(R.id.webview);
+        myWebView.setVisibility(View.GONE);
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.addJavascriptInterface(new Object()
         {
@@ -138,6 +139,7 @@ public class StartActivity extends AppCompatActivity {
         myWebView.setWebViewClient(new MyWebViewClient(){
             public void onPageFinished(WebView view, String url) {
                 LoadIndicator.setVisibility(View.GONE);
+                myWebView.setVisibility(View.VISIBLE);
 
                 view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + passw + "'; ;})()");
                 view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = '" + name + "'; ;})()");

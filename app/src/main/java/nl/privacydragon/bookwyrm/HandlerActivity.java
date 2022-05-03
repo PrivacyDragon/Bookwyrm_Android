@@ -70,6 +70,7 @@ public class HandlerActivity extends AppCompatActivity {
         // End of auto-generated stuff
         LoadIndicator = (ProgressBar) findViewById(R.id.progressBar3);
         myWebView = (WebView) findViewById(R.id.webview);
+        myWebView.setVisibility(View.GONE);
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.getSettings().setDomStorageEnabled(true);
         myWebView.addJavascriptInterface(new Object()
@@ -176,6 +177,7 @@ public class HandlerActivity extends AppCompatActivity {
         myWebView.setWebViewClient(new HandlerActivity.MyWebViewClient() {
             public void onPageFinished(WebView view, String url) {
                 LoadIndicator.setVisibility(View.GONE);
+                myWebView.setVisibility(View.VISIBLE);
 
                 view.loadUrl("javascript:(function() { document.getElementById('id_password').value = '" + passw + "'; ;})()");
                 view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
@@ -216,7 +218,7 @@ public class HandlerActivity extends AppCompatActivity {
             // Need to accept permissions to use the camera
             @Override
             public void onPermissionRequest(PermissionRequest request) {
-                String permission = Manifest.permission.CAMERA;
+                String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
                 int grant = ContextCompat.checkSelfPermission(HandlerActivity.this, permission);
                 if (grant != PackageManager.PERMISSION_GRANTED) {
                     String[] permission_list = new String[1];
@@ -226,7 +228,7 @@ public class HandlerActivity extends AppCompatActivity {
                 request.grant(request.getResources());
                 final String[] requestedResources = request.getResources();
                 for (String r : requestedResources) {
-                   if (r.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+                   if (r.equals(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)) {
                       request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
                       break;
                    }
