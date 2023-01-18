@@ -269,7 +269,7 @@ public class HandlerActivity extends AppCompatActivity {
                 Toast.makeText(this, "cancelled", Toast.LENGTH_SHORT).show();
             } else {
                 Log.d("MainActivity", "Scanned");
-                myWebView.loadUrl("Javascript:(function() {document.getElementById('search_input').value = " + Result.getContents() + ";" +
+                myWebView.loadUrl("Javascript:(function() {document.getElementById('tour-search').value = " + Result.getContents() + ";" + "document.getElementById('search_input').value = " + Result.getContents() + ";" +
                         "document.getElementsByTagName('form')[0].submit(); ;})()");
                 LoadIndicator.setVisibility(View.VISIBLE);
 
