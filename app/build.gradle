@@ -8,9 +8,9 @@ android {
     defaultConfig {
         applicationId "nl.privacydragon.bookwyrm"
         minSdk 23
-        targetSdk 31
-        versionCode 10
-        versionName "1.3.3"
+        targetSdk 33
+        versionCode 11
+        versionName "1.3.4"
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
@@ -25,6 +25,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    namespace 'nl.privacydragon.bookwyrm'
 }
 
 dependencies {

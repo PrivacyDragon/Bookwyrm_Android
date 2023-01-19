@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences sharedPref = MainActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
             String defaultValue = "none";
             String server = sharedPref.getString(getString(R.string.server), defaultValue);
-            if (server != "none") {
+            if (!"none".equals(server)) {
                 startActivity(new Intent(MainActivity.this, nl.privacydragon.bookwyrm.StartActivity.class));
             }
         }
@@ -54,9 +54,10 @@ public class MainActivity extends AppCompatActivity {
             String ALLOWED_CHARACTERS ="0123456789qwertyuiopasdfghjklzxcvbnm!@#$%^&*()_+=][{}";
             final Random random=new Random();
             final StringBuilder sb=new StringBuilder(12);
-            for(int i = 0; i< 12; ++i)
+            for(int i = 0; i< 12; ++i) {
                 sb.append(ALLOWED_CHARACTERS.charAt(random.nextInt(ALLOWED_CHARACTERS.length())));
-                return sb.toString();
+            }
+            return sb.toString();
         }
 
         public void LogIn(View view) throws IllegalBlockSizeException, BadPaddingException, KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, UnrecoverableKeyException, NoSuchPaddingException, InvalidKeyException {
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     keyGenerator.init(
                             new KeyGenParameterSpec.Builder("BookWyrm",
                                     KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
-                                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)                   .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                                     .setRandomizedEncryptionRequired(false)
                                     .build());
                     keyGenerator.generateKey();

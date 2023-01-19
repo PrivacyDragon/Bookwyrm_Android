@@ -88,48 +88,35 @@ public class StartActivity extends AppCompatActivity {
         //Then, load it. or something. To make sure that it can be used.
         try {
             keyStore.load(null);
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
+        } catch (CertificateException | IOException | NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
         //Next, retrieve the key to be used for the decryption.
         Key DragonLikeKey = null;
         try {
             DragonLikeKey = keyStore.getKey("BookWyrm", null);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (UnrecoverableKeyException e) {
+        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
             e.printStackTrace();
         }
         //Do something with getting the/a cipher or something.
         Cipher c = null;
         try {
             c = Cipher.getInstance("AES/GCM/NoPadding");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             e.printStackTrace();
         }
         //And then initiating the cipher, so it can be used.
         try {
+            assert c != null;
             c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, codeMagic.getBytes()));
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
+        } catch (InvalidAlgorithmParameterException | InvalidKeyException e) {
             e.printStackTrace();
         }
         //Decrypt the password!
         byte[] truePass = null;
         try {
             truePass = c.doFinal(Base64.decode(pass, Base64.DEFAULT));
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
+        } catch (BadPaddingException | IllegalBlockSizeException e) {
             e.printStackTrace();
         }
         //Convert the decrypted password back to a string.
@@ -177,7 +164,7 @@ public class StartActivity extends AppCompatActivity {
         }
 
         IntentIntegrator intentIntegrator = new IntentIntegrator(StartActivity.this);
-        intentIntegrator.setDesiredBarcodeFormats(intentIntegrator.EAN_13);
+        intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.EAN_13);
         intentIntegrator.setBeepEnabled(false);
         intentIntegrator.setCameraId(0);
         intentIntegrator.setPrompt("SCAN ISBN");
@@ -196,8 +183,14 @@ public class StartActivity extends AppCompatActivity {
                 Toast.makeText(this, "cancelled", Toast.LENGTH_SHORT).show();
             } else {
                 Log.d("MainActivity", "Scanned");
-                myWebView.loadUrl("Javascript:(function() {document.getElementById('tour-search').value = " + Result.getContents() + ";" + "document.getElementById('search_input').value = " + Result.getContents() + ";" +
-                        "document.getElementsByTagName('form')[0].submit(); ;})()");
+                myWebView.loadUrl("Javascript:(function() {" +
+                        "try {" +
+                        "document.getElementById('tour-search').value = " + Result.getContents() + ";" +
+                        "} catch {" +
+                        "document.getElementById('search_input').value = " + Result.getContents() + ";" +
+                        "}" +
+                        "document.getElementsByTagName('form')[0].submit();" +
+                        ";})()");
                 LoadIndicator.setVisibility(View.VISIBLE);
 
             }
