@@ -128,8 +128,8 @@ public class StartActivity extends AppCompatActivity {
                 LoadIndicator.setVisibility(View.GONE);
                 myWebView.setVisibility(View.VISIBLE);
 
-                view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + passw + "'; ;})()");
-                view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = '" + name + "'; ;})()");
+                view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = `" + passw + "`; ;})()");
+                view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = `" + name + "`; ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "/login') { document.getElementsByName(\"login-confirm\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { " +
                         "if (document.querySelectorAll(\"[data-modal-open]\")[0]) {" +
