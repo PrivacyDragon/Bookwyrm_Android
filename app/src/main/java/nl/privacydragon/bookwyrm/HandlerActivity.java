@@ -179,8 +179,8 @@ public class HandlerActivity extends AppCompatActivity {
                 LoadIndicator.setVisibility(View.GONE);
                 myWebView.setVisibility(View.VISIBLE);
 
-                view.loadUrl("javascript:(function() { document.getElementById('id_password').value = '" + passw + "'; ;})()");
-                view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
+                view.loadUrl("javascript:(function() { document.getElementById('id_password').value = `" + passw + "`; ;})()");
+                view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = `" + name + "`; ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "' && !/(review|generatednote|quotation|comment)/i.test(window.location.href)) { document.getElementsByName(\"login\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment)/i.test(window.location.href)) {" +
