@@ -1,41 +1,36 @@
 package nl.privacydragon.bookwyrm;
 
-import static androidx.core.content.ContextCompat.startActivity;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
-//import android.support.v4.app.ActivityCompat;
-//import android.support.v4.content.ContextCompat;
-//import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
-import android.webkit.PermissionRequest;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +53,7 @@ public class HandlerActivity extends AppCompatActivity {
 
     WebView myWebView;
     ProgressBar LoadIndicator;
+    public ValueCallback<Uri[]> omhooglader;
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,11 +64,26 @@ public class HandlerActivity extends AppCompatActivity {
         String appLinkAction = appLinkIntent.getAction();
         Uri appLinkData = appLinkIntent.getData();
         // End of auto-generated stuff
+        ActivityResultLauncher<Intent> voodooLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        // There are no request codes
+                        Intent data = result.getData();
+                        if (omhooglader == null)
+                            return;
+                        omhooglader.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.getResultCode(), data));
+                    } else {
+                        omhooglader.onReceiveValue(null);
+                    }
+                });
         LoadIndicator = (ProgressBar) findViewById(R.id.progressBar3);
         myWebView = (WebView) findViewById(R.id.webview);
         myWebView.setVisibility(View.GONE);
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.getSettings().setDomStorageEnabled(true);
+        myWebView.getSettings().setAllowFileAccess(true);
+        myWebView.getSettings().setAllowContentAccess(true);
         myWebView.addJavascriptInterface(new Object()
         {
             @JavascriptInterface           // For API 17+
@@ -84,6 +95,24 @@ public class HandlerActivity extends AppCompatActivity {
 
             }
         }, "scan");
+        myWebView.setWebChromeClient(new WebChromeClient() {
+                                         @Override
+                                         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                                             if (omhooglader != null) {
+                                                 //omhooglader.onReceiveValue(null);
+                                                 omhooglader = null;
+                                             }
+                                             omhooglader = filePathCallback;
+                                             Intent intent = fileChooserParams.createIntent();
+                                             try {
+                                                 voodooLauncher.launch(intent);
+                                             } catch (ActivityNotFoundException grrr){
+                                                 omhooglader = null;
+                                                 return false;
+                                             }
+                                             return true;
+                                         }
+                                     });
         //myWebView.addJavascriptInterface(new HandlerActivity.WebAppInterface(this), "Android");
         //The user credentials are stored in the shared preferences, so first they have to be read from there.
         String defaultValue = "none";
@@ -101,9 +130,10 @@ public class HandlerActivity extends AppCompatActivity {
         }
         String pathMaybe = appLinkData.getPath();
         String toGoServer = "bla";
-        if (pathMaybe.contains("user")) {
+        //This bit of code regelt wanneer de webpagina wordt weergegeven. It is quite handig then om dan ook "book" toe te laten, zodat ook boeken in de app bekeken kunnen worden...
+        if (pathMaybe.contains("user") || pathMaybe.contains("book")) {
             //If the path contains 'user', it is a user profile, unless it is followed by something like 'review'.
-            if (pathMaybe.contains("review") || pathMaybe.contains("generatednote") || pathMaybe.contains("quotation") || pathMaybe.contains("comment") ) {
+            if (pathMaybe.contains("review") || pathMaybe.contains("generatednote") || pathMaybe.contains("quotation") || pathMaybe.contains("comment") || pathMaybe.contains("book")) {
                 toGoServer = "https://" + appLinkData.getHost() + pathMaybe;
             }
             else {
@@ -112,6 +142,10 @@ public class HandlerActivity extends AppCompatActivity {
                 toGoServer = "https://" + server + "/user/" + atUser;
             }
         } else {
+            //If the toGoServer string remains "bla", dan zal de user when they teruggaan uitkomen op https://bla/, which is 'not allowed'.
+            //So, maybe here, just to be sure, assign the value of the user's own server to the toGoServer variabele.
+            //After that, since apparently I have decided that the URL the user tried to follow is not valid in my application, redirect them to StartActivity.
+            toGoServer = "https://" + server;
             startActivity(new Intent(HandlerActivity.this, nl.privacydragon.bookwyrm.StartActivity.class));
         }
         //Then all the decryption stuff has to happen. There are a lot of try-catch stuff, because apparently that seems to be needed.
@@ -181,9 +215,9 @@ public class HandlerActivity extends AppCompatActivity {
 
                 view.loadUrl("javascript:(function() { document.getElementById('id_password').value = '" + passw + "'; ;})()");
                 view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
-                view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "' && !/(review|generatednote|quotation|comment)/i.test(window.location.href)) { document.getElementsByName(\"login\")[0].submit();} ;})()");
+                view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "' && !/(review|generatednote|quotation|comment|book)/i.test(window.location.href)) { document.getElementsByName(\"login\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
-                view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment)/i.test(window.location.href)) {" +
+                view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment|book)/i.test(window.location.href)) {" +
                                 "blocks = document.getElementsByClassName('block');" +
                                 "for (let element of blocks){" +
                                         "if (element.localName == 'header') { " +
@@ -236,9 +270,26 @@ public class HandlerActivity extends AppCompatActivity {
             }
         });*/
         //Here, load the login page of the server. That actually does all that is needed.
-        //myWebView.loadUrl("https://serratus.github.io/quaggaJS/examples/live_w_locator.html");
         myWebView.loadUrl(toGoServer);
     }
+
+    private final ActivityResultLauncher<ScanOptions> barcodeLanceerder = registerForActivityResult(new ScanContract(),
+            result -> {
+                if(result.getContents() == null) {
+                    Toast.makeText(HandlerActivity.this, "Cancelled", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(HandlerActivity.this, "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
+                    myWebView.loadUrl("Javascript:(function() {" +
+                            "try {" +
+                            "document.getElementById('tour-search').value = " + result.getContents() + ";" +
+                            "} catch {" +
+                            "document.getElementById('search_input').value = " + result.getContents() + ";" +
+                            "}" +
+                            "document.getElementsByTagName('form')[0].submit();" +
+                            ";})()");
+                    LoadIndicator.setVisibility(View.VISIBLE);
+                }
+            });
 
     public void ScanBarCode() {
         String permission = Manifest.permission.CAMERA;
@@ -248,56 +299,16 @@ public class HandlerActivity extends AppCompatActivity {
             permission_list[0] = permission;
             ActivityCompat.requestPermissions(HandlerActivity.this, permission_list, 1);
         }
-
-        IntentIntegrator intentIntegrator = new IntentIntegrator(HandlerActivity.this);
-        intentIntegrator.setDesiredBarcodeFormats(intentIntegrator.EAN_13);
-        intentIntegrator.setBeepEnabled(true);
-        intentIntegrator.setCameraId(0);
-        intentIntegrator.setPrompt("SCAN");
-        intentIntegrator.setBarcodeImageEnabled(false);
-        intentIntegrator.initiateScan();
+        ScanOptions eisen = new ScanOptions();
+        eisen.setDesiredBarcodeFormats(ScanOptions.EAN_13);
+        eisen.setBeepEnabled(true);
+        eisen.setCameraId(0);
+        eisen.setPrompt("SCAN ISBN");
+        eisen.setBarcodeImageEnabled(false);
+        barcodeLanceerder.launch(eisen);
         //return "blup";
         //return "bla";
     }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        IntentResult Result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (Result != null) {
-            if (Result.getContents() == null) {
-                Toast.makeText(this, "cancelled", Toast.LENGTH_SHORT).show();
-            } else {
-                Log.d("MainActivity", "Scanned");
-                myWebView.loadUrl("Javascript:(function() {" +
-                        "try {" +
-                            "document.getElementById('tour-search').value = " + Result.getContents() + ";" +
-                        "} catch {" +
-                        "document.getElementById('search_input').value = " + Result.getContents() + ";" +
-                        "}" +
-                        "document.getElementsByTagName('form')[0].submit();" +
-                        ";})()");
-                LoadIndicator.setVisibility(View.VISIBLE);
-
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
-        }
-    }
-
-    /*public class WebAppInterface {
-        Context mContext;
-
-        //Instantiate the interface and set the context
-        WebAppInterface(Context c) {
-            mContext = c;
-        }
-
-        // Show a toast from the web page
-        @JavascriptInterface
-        public void showToast(String toast) {
-            Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
-        }
-    }*/
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -310,7 +321,15 @@ public class HandlerActivity extends AppCompatActivity {
         // system behavior (probably exit the activity)
         return super.onKeyDown(keyCode, event);
     }
-    //Here is code to make sure that links of the bookwyrm server are handled withing the webview client, instead of having it open in the default browser.
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+            return true;
+        }
+        return super.onKeyLongPress(keyCode, event);
+    }
+    //Here is code to make sure that links of the bookwyrm server are handled within the webview client, instead of having it open in the default browser.
     //Yes, I used the web for this too.
     private class MyWebViewClient extends WebViewClient {
         @Override

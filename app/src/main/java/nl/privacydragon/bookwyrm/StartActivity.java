@@ -2,30 +2,35 @@ package nl.privacydragon.bookwyrm;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-//import android.support.v7.app.AppCompatActivity;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -47,12 +52,27 @@ import javax.crypto.spec.GCMParameterSpec;
 public class StartActivity extends AppCompatActivity {
     WebView myWebView;
     ProgressBar LoadIndicator;
+    public ValueCallback<Uri[]> omhooglader;
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
         LoadIndicator = (ProgressBar) findViewById(R.id.progressBar3);
+        ActivityResultLauncher<Intent> voodooLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        // There are no request codes
+                        Intent data = result.getData();
+                        if (omhooglader == null)
+                            return;
+                        omhooglader.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.getResultCode(), data));
+                    }
+                    else {
+                        omhooglader.onReceiveValue(null);
+                    }
+                });
         myWebView = (WebView) findViewById(R.id.webview);
         myWebView.setVisibility(View.GONE);
         myWebView.getSettings().setJavaScriptEnabled(true);
@@ -67,6 +87,31 @@ public class StartActivity extends AppCompatActivity {
 
             }
         }, "scan");
+        myWebView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                if (omhooglader != null) {
+                    //omhooglader.onReceiveValue(null);
+                    omhooglader = null;
+                }
+                omhooglader = filePathCallback;
+                Intent intent = fileChooserParams.createIntent();
+                try {
+//                    String toestemming = Manifest.permission.READ_EXTERNAL_STORAGE;
+//                    int grant = ContextCompat.checkSelfPermission(StartActivity.this, toestemming);
+//                    if (grant != PackageManager.PERMISSION_GRANTED) {
+//                        String[] permission_list = new String[1];
+//                        permission_list[0] = toestemming;
+//                        ActivityCompat.requestPermissions(StartActivity.this, permission_list, 1);
+//                    }
+                    voodooLauncher.launch(intent);
+                } catch (ActivityNotFoundException grrr){
+                    omhooglader = null;
+                    return false;
+                }
+                return true;
+            }
+        });
         //The user credentials are stored in the shared preferences, so first they have to be read from there.
         String defaultValue = "none";
         SharedPreferences sharedPref = StartActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
@@ -154,6 +199,24 @@ public class StartActivity extends AppCompatActivity {
         //Here, load the login page of the server. That actually does all that is needed.
         myWebView.loadUrl("https://" + server + "/login");
     }
+    private final ActivityResultLauncher<ScanOptions> barcodeLanceerder = registerForActivityResult(new ScanContract(),
+            result -> {
+                if(result.getContents() == null) {
+                    Toast.makeText(StartActivity.this, "Cancelled", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(StartActivity.this, "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
+                    myWebView.loadUrl("Javascript:(function() {" +
+                            "try {" +
+                            "document.getElementById('tour-search').value = " + result.getContents() + ";" +
+                            "} catch {" +
+                            "document.getElementById('search_input').value = " + result.getContents() + ";" +
+                            "}" +
+                            "document.getElementsByTagName('form')[0].submit();" +
+                            ";})()");
+                    LoadIndicator.setVisibility(View.VISIBLE);
+                }
+            });
+
     public void ScanBarCode() {
         String permission = Manifest.permission.CAMERA;
         int grant = ContextCompat.checkSelfPermission(StartActivity.this, permission);
@@ -162,41 +225,15 @@ public class StartActivity extends AppCompatActivity {
             permission_list[0] = permission;
             ActivityCompat.requestPermissions(StartActivity.this, permission_list, 1);
         }
-
-        IntentIntegrator intentIntegrator = new IntentIntegrator(StartActivity.this);
-        intentIntegrator.setDesiredBarcodeFormats(IntentIntegrator.EAN_13);
-        intentIntegrator.setBeepEnabled(false);
-        intentIntegrator.setCameraId(0);
-        intentIntegrator.setPrompt("SCAN ISBN");
-        intentIntegrator.setBarcodeImageEnabled(false);
-        intentIntegrator.initiateScan();
-
+        ScanOptions eisen = new ScanOptions();
+        eisen.setDesiredBarcodeFormats(ScanOptions.EAN_13);
+        eisen.setBeepEnabled(true);
+        eisen.setCameraId(0);
+        eisen.setPrompt("SCAN ISBN");
+        eisen.setBarcodeImageEnabled(false);
+        barcodeLanceerder.launch(eisen);
         //return "blup";
         //return "bla";
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        IntentResult Result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (Result != null) {
-            if (Result.getContents() == null) {
-                Toast.makeText(this, "cancelled", Toast.LENGTH_SHORT).show();
-            } else {
-                Log.d("MainActivity", "Scanned");
-                myWebView.loadUrl("Javascript:(function() {" +
-                        "try {" +
-                        "document.getElementById('tour-search').value = " + Result.getContents() + ";" +
-                        "} catch {" +
-                        "document.getElementById('search_input').value = " + Result.getContents() + ";" +
-                        "}" +
-                        "document.getElementsByTagName('form')[0].submit();" +
-                        ";})()");
-                LoadIndicator.setVisibility(View.VISIBLE);
-
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
-        }
     }
 
     @Override
@@ -210,7 +247,15 @@ public class StartActivity extends AppCompatActivity {
         // system behavior (probably exit the activity)
         return super.onKeyDown(keyCode, event);
     }
-    //Here is code to make sure that links of the bookwyrm server are handled withing the webview client, instead of having it open in the default browser.
+    @Override
+    public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+            return true;
+        }
+        return super.onKeyLongPress(keyCode, event);
+    }
+    //Here is code to make sure that links of the bookwyrm server are handled within the webview client, instead of having it open in the default browser.
     //Yes, I used the web for this too.
     private class MyWebViewClient extends WebViewClient {
         @Override

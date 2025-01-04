@@ -1,0 +1,6 @@
+* It is finally possible to add book covers from your own device storage.
+* You can now return to the initial log-in screen by long-pressing the 'back' button.
+* Dependencies have been updated to newest versions.
+* Compiled for up to Android 14 now.
+* Deprecated pieces of code have been rewritten.
+* More Bookwyrm instances have been added.
