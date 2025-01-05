@@ -29,7 +29,7 @@
         android:layout_marginStart="10dp"
         android:layout_marginEnd="1dp"
         android:layout_marginBottom="262dp"
-        android:hint="bookwyrm.social"
+        android:hint="e.g. bookwyrm.social"
         android:inputType="text"
         android:minHeight="48dp"
         app:layout_constraintBottom_toBottomOf="parent"

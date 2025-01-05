@@ -1,0 +1,5 @@
+* Fixed some log-in problems.
+* Changed colour of warning text to be better visible.
+* Disabled inclusion of dependencies info and VCS info, fixing build problems for F-Droid.
+* Long-press now actually works.
+* Other minor changes

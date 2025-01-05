@@ -166,6 +166,7 @@ public class StartActivity extends AppCompatActivity {
         }
         //Convert the decrypted password back to a string.
         String passw = new String(truePass, StandardCharsets.UTF_8);
+        String wacht = passw.replaceAll("'", "\\\\'");
 
         //A webviewclient thing is needed for some stuff. To automatically log in, the credentials are put in the form by the javascript that is loaded once the page is fully loaded. Then it is automatically submitted if the current page is the login page.
         myWebView.setWebViewClient(new MyWebViewClient(){
@@ -173,7 +174,7 @@ public class StartActivity extends AppCompatActivity {
                 LoadIndicator.setVisibility(View.GONE);
                 myWebView.setVisibility(View.VISIBLE);
 
-                view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + passw + "'; ;})()");
+                view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + wacht + "'; ;})()");
                 view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = '" + name + "'; ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "/login') { document.getElementsByName(\"login-confirm\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { " +
@@ -237,7 +238,7 @@ public class StartActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
         // Check if the key event was the Back button and if there's history
         if ((keyCode == KeyEvent.KEYCODE_BACK) && myWebView.canGoBack()) {
             myWebView.goBack();
@@ -245,7 +246,7 @@ public class StartActivity extends AppCompatActivity {
         }
         // If it wasn't the Back key or there's no web page history, bubble up to the default
         // system behavior (probably exit the activity)
-        return super.onKeyDown(keyCode, event);
+        return super.onKeyUp(keyCode, event);
     }
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {

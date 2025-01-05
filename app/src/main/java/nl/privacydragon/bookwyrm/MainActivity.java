@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-//import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
@@ -71,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
             //All fields are required, so if one of them is empty, the user should see a warning.
             if (server.isEmpty() || pass.isEmpty() || name.isEmpty()) {
                 TextView ErrorMessage = (TextView) findViewById(R.id.textView5);
-                ErrorMessage.setTextColor(Color.RED);
+                ErrorMessage.setTextColor(Color.YELLOW);
                 ErrorMessage.setText("ERROR: All fields are required!");
             } else {
                 //Likely this will be the first time the program is run. So create a new key thing in the android key store happening.
