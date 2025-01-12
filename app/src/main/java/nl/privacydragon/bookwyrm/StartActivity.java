@@ -10,7 +10,9 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.NetworkOnMainThreadException;
 import android.util.Base64;
 import android.view.KeyEvent;
 import android.view.View;
@@ -32,7 +34,13 @@ import androidx.core.content.ContextCompat;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -174,9 +182,9 @@ public class StartActivity extends AppCompatActivity {
                 LoadIndicator.setVisibility(View.GONE);
                 myWebView.setVisibility(View.VISIBLE);
 
-                view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + wacht + "'; ;})()");
-                view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = '" + name + "'; ;})()");
-                view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "/login') { document.getElementsByName(\"login-confirm\")[0].submit();} ;})()");
+                //view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + wacht + "'; ;})()");
+                //view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = '" + name + "'; ;})()");
+                //view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "/login') { document.getElementsByName(\"login-confirm\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { " +
                         "if (document.querySelectorAll(\"[data-modal-open]\")[0]) {" +
                             "let ISBN_Button = document.querySelectorAll(\"[data-modal-open]\")[0];" +
@@ -198,7 +206,46 @@ public class StartActivity extends AppCompatActivity {
             }
         });
         //Here, load the login page of the server. That actually does all that is needed.
-        myWebView.loadUrl("https://" + server + "/login");
+        String geheimeToken = null;
+        try {
+            geheimeToken = getMiddleWareToken(server);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        String gegevens = null;
+        try {
+            gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(geheimeToken, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        myWebView.postUrl("https://" + server + "/login", gegevens.getBytes());
+    }
+    public String getMiddleWareToken(String server) throws IOException { //Er gaat hier nog iets fout. Steeds een error ofzo.
+        //Het idee is dat deze functie de loginpagina van de server laadt en dan de 'csrfmiddlewaretoken' uit het inlogformulier haalt,
+        //Zodat dat dan gebruikt kan worden bij het inloggen.
+        String token;
+        InputStream ina;
+        URL url = new URL("https://" + server + "/login");
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        try {
+            ina = new BufferedInputStream(urlConnection.getInputStream());
+            byte[] pagina = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pagina = ina.readAllBytes();
+            }
+            try {
+                ina.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            String zooi = new String(pagina);
+            String[] opgebroken = zooi.split("name=\"csrfmiddlewaretoken\" value=");
+            String[] breukjes = opgebroken[1].split("\">");
+            token = breukjes[0];
+        } finally {
+            urlConnection.disconnect();
+        }
+        return token;
     }
     private final ActivityResultLauncher<ScanOptions> barcodeLanceerder = registerForActivityResult(new ScanContract(),
             result -> {
