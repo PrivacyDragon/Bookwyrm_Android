@@ -118,12 +118,12 @@ public class HandlerActivity extends AppCompatActivity {
         String defaultValue = "none";
         SharedPreferences sharedPref = HandlerActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
         String server = sharedPref.getString(getString(R.string.server), defaultValue);
-        SharedPreferences sharedPrefName = HandlerActivity.this.getSharedPreferences(getString(R.string.name), Context.MODE_PRIVATE);
-        String name = sharedPrefName.getString(getString(R.string.name), defaultValue);
-        SharedPreferences sharedPrefPass = HandlerActivity.this.getSharedPreferences(getString(R.string.pw), Context.MODE_PRIVATE);
-        String pass = sharedPrefPass.getString(getString(R.string.pw), defaultValue);
-        SharedPreferences sharedPrefMagic = HandlerActivity.this.getSharedPreferences(getString(R.string.q), Context.MODE_PRIVATE);
-        String codeMagic = sharedPrefMagic.getString(getString(R.string.q), defaultValue);
+        //SharedPreferences sharedPrefName = HandlerActivity.this.getSharedPreferences(getString(R.string.name), Context.MODE_PRIVATE);
+        //String name = sharedPrefName.getString(getString(R.string.name), defaultValue);
+        //SharedPreferences sharedPrefPass = HandlerActivity.this.getSharedPreferences(getString(R.string.pw), Context.MODE_PRIVATE);
+        //String pass = sharedPrefPass.getString(getString(R.string.pw), defaultValue);
+        //SharedPreferences sharedPrefMagic = HandlerActivity.this.getSharedPreferences(getString(R.string.q), Context.MODE_PRIVATE);
+        //String codeMagic = sharedPrefMagic.getString(getString(R.string.q), defaultValue);
         //If there is nothing configured yet, the user should be redirected to the main screen for logging in.
         if (server == "none") {
             startActivity(new Intent(HandlerActivity.this, nl.privacydragon.bookwyrm.MainActivity.class));
@@ -150,62 +150,62 @@ public class HandlerActivity extends AppCompatActivity {
         }
         //Then all the decryption stuff has to happen. There are a lot of try-catch stuff, because apparently that seems to be needed.
         //First get the keystore thing.
-        KeyStore keyStore = null;
-        try {
-            keyStore = KeyStore.getInstance("AndroidKeyStore");
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        }
-        //Then, load it. or something. To make sure that it can be used.
-        try {
-            keyStore.load(null);
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        //Next, retrieve the key to be used for the decryption.
-        Key DragonLikeKey = null;
-        try {
-            DragonLikeKey = keyStore.getKey("BookWyrm", null);
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (UnrecoverableKeyException e) {
-            e.printStackTrace();
-        }
-        //Do something with getting the/a cipher or something.
-        Cipher c = null;
-        try {
-            c = Cipher.getInstance("AES/GCM/NoPadding");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-        //And then initiating the cipher, so it can be used.
-        try {
-            c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, codeMagic.getBytes()));
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
-        //Decrypt the password!
-        byte[] truePass = null;
-        try {
-            truePass = c.doFinal(Base64.decode(pass, Base64.DEFAULT));
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        }
-        //Convert the decrypted password back to a string.
-        String passw = new String(truePass, StandardCharsets.UTF_8);
-        String wacht = passw.replaceAll("'", "\\\\'");
+//        KeyStore keyStore = null;
+//        try {
+//            keyStore = KeyStore.getInstance("AndroidKeyStore");
+//        } catch (KeyStoreException e) {
+//            e.printStackTrace();
+//        }
+//        //Then, load it. or something. To make sure that it can be used.
+//        try {
+//            keyStore.load(null);
+//        } catch (CertificateException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        }
+//        //Next, retrieve the key to be used for the decryption.
+//        Key DragonLikeKey = null;
+//        try {
+//            DragonLikeKey = keyStore.getKey("BookWyrm", null);
+//        } catch (KeyStoreException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        } catch (UnrecoverableKeyException e) {
+//            e.printStackTrace();
+//        }
+//        //Do something with getting the/a cipher or something.
+//        Cipher c = null;
+//        try {
+//            c = Cipher.getInstance("AES/GCM/NoPadding");
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchPaddingException e) {
+//            e.printStackTrace();
+//        }
+//        //And then initiating the cipher, so it can be used.
+//        try {
+//            c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, codeMagic.getBytes()));
+//        } catch (InvalidAlgorithmParameterException e) {
+//            e.printStackTrace();
+//        } catch (InvalidKeyException e) {
+//            e.printStackTrace();
+//        }
+//        //Decrypt the password!
+//        byte[] truePass = null;
+//        try {
+//            truePass = c.doFinal(Base64.decode(pass, Base64.DEFAULT));
+//        } catch (BadPaddingException e) {
+//            e.printStackTrace();
+//        } catch (IllegalBlockSizeException e) {
+//            e.printStackTrace();
+//        }
+//        //Convert the decrypted password back to a string.
+//        String passw = new String(truePass, StandardCharsets.UTF_8);
+        //String wacht = passw.replaceAll("'", "\\\\'");
 
         //A webviewclient thing is needed for some stuff. To automatically log in, the credentials are put in the form by the javascript that is loaded once the page is fully loaded. Then it is automatically submitted if the current page is the login page.
         String finalToGoServer = toGoServer;
@@ -214,10 +214,10 @@ public class HandlerActivity extends AppCompatActivity {
                 LoadIndicator.setVisibility(View.GONE);
                 myWebView.setVisibility(View.VISIBLE);
 
-                view.loadUrl("javascript:(function() { document.getElementById('id_password').value = '" + wacht + "'; ;})()");
-                view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
+                //view.loadUrl("javascript:(function() { document.getElementById('id_password').value = '" + wacht + "'; ;})()");
+                //view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
                 view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "' && !/(review|generatednote|quotation|comment|book)/i.test(window.location.href)) { document.getElementsByName(\"login\")[0].submit();} ;})()");
-                view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
+                //view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment|book)/i.test(window.location.href)) {" +
                                 "blocks = document.getElementsByClassName('block');" +
                                 "for (let element of blocks){" +

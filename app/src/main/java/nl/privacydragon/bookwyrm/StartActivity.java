@@ -12,7 +12,6 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.NetworkOnMainThreadException;
 import android.util.Base64;
 import android.view.KeyEvent;
 import android.view.View;
@@ -38,7 +37,12 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookieStore;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -50,6 +54,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.List;
+import java.util.Objects;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -174,7 +180,7 @@ public class StartActivity extends AppCompatActivity {
         }
         //Convert the decrypted password back to a string.
         String passw = new String(truePass, StandardCharsets.UTF_8);
-        String wacht = passw.replaceAll("'", "\\\\'");
+        //String wacht = passw.replaceAll("'", "\\\\'");
 
         //A webviewclient thing is needed for some stuff. To automatically log in, the credentials are put in the form by the javascript that is loaded once the page is fully loaded. Then it is automatically submitted if the current page is the login page.
         myWebView.setWebViewClient(new MyWebViewClient(){
@@ -185,6 +191,7 @@ public class StartActivity extends AppCompatActivity {
                 //view.loadUrl("javascript:(function() { document.getElementById('id_password_confirm').value = '" + wacht + "'; ;})()");
                 //view.loadUrl("javascript:(function() { document.getElementById('id_localname_confirm').value = '" + name + "'; ;})()");
                 //view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "/login') { document.getElementsByName(\"login-confirm\")[0].submit();} ;})()");
+                //view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "/login' && document.title != '403 Forbidden') { this.document.location.href = 'source://' + encodeURI(document.documentElement.outerHTML);} ;})()");
                 view.loadUrl("javascript:(function() { " +
                         "if (document.querySelectorAll(\"[data-modal-open]\")[0]) {" +
                             "let ISBN_Button = document.querySelectorAll(\"[data-modal-open]\")[0];" +
@@ -206,46 +213,183 @@ public class StartActivity extends AppCompatActivity {
             }
         });
         //Here, load the login page of the server. That actually does all that is needed.
-        String geheimeToken = null;
+//        try {
+//            getMiddleWareToken(server, name, passw);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//        String geheimeToken = null;
+//        try {
+//            geheimeToken = getMiddleWareToken(server);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//        String gegevens = null;
+//        try {
+//            gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(geheimeToken, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
+//        } catch (UnsupportedEncodingException e) {
+//            throw new RuntimeException(e);
+//        }
+//        myWebView.postUrl("https://" + server + "/login", gegevens.getBytes());
+          //myWebView.loadUrl("https://" + server + "/login");
+//          myWebView.setVisibility(View.GONE);
+//          LoadIndicator.setVisibility(View.VISIBLE);
+//          android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
+          //myWebView.loadUrl("javascript:this.document.location.href = 'source://' + encodeURI(document.documentElement.outerHTML);");
         try {
-            geheimeToken = getMiddleWareToken(server);
+            getMiddleWareTokenAndLogIn(server, name, passw);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        String gegevens = null;
-        try {
-            gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(geheimeToken, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
-        myWebView.postUrl("https://" + server + "/login", gegevens.getBytes());
+
+
     }
-    public String getMiddleWareToken(String server) throws IOException { //Er gaat hier nog iets fout. Steeds een error ofzo.
+//    public void logIn(String lichaam) {
+//        //First, verkrijg the user credentials.
+//        //The user credentials are stored in the shared preferences, so first they have to be read from there.
+//        String defaultValue = "none";
+//        SharedPreferences sharedPref = StartActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
+//        String server = sharedPref.getString(getString(R.string.server), defaultValue);
+//        SharedPreferences sharedPrefName = StartActivity.this.getSharedPreferences(getString(R.string.name), Context.MODE_PRIVATE);
+//        String name = sharedPrefName.getString(getString(R.string.name), defaultValue);
+//        SharedPreferences sharedPrefPass = StartActivity.this.getSharedPreferences(getString(R.string.pw), Context.MODE_PRIVATE);
+//        String pass = sharedPrefPass.getString(getString(R.string.pw), defaultValue);
+//        SharedPreferences sharedPrefMagic = StartActivity.this.getSharedPreferences(getString(R.string.q), Context.MODE_PRIVATE);
+//        String codeMagic = sharedPrefMagic.getString(getString(R.string.q), defaultValue);
+//        //Then all the decryption stuff has to happen. There are a lot of try-catch stuff, because apparently that seems to be needed.
+//        //First get the keystore thing.
+//        KeyStore keyStore = null;
+//        try {
+//            keyStore = KeyStore.getInstance("AndroidKeyStore");
+//        } catch (KeyStoreException e) {
+//            e.printStackTrace();
+//        }
+//        //Then, load it. or something. To make sure that it can be used.
+//        try {
+//            keyStore.load(null);
+//        } catch (CertificateException | IOException | NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        }
+//        //Next, retrieve the key to be used for the decryption.
+//        Key DragonLikeKey = null;
+//        try {
+//            DragonLikeKey = keyStore.getKey("BookWyrm", null);
+//        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
+//            e.printStackTrace();
+//        }
+//        //Do something with getting the/a cipher or something.
+//        Cipher c = null;
+//        try {
+//            c = Cipher.getInstance("AES/GCM/NoPadding");
+//        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+//            e.printStackTrace();
+//        }
+//        //And then initiating the cipher, so it can be used.
+//        try {
+//            assert c != null;
+//            c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, codeMagic.getBytes()));
+//        } catch (InvalidAlgorithmParameterException | InvalidKeyException e) {
+//            e.printStackTrace();
+//        }
+//        //Decrypt the password!
+//        byte[] truePass = null;
+//        try {
+//            truePass = c.doFinal(Base64.decode(pass, Base64.DEFAULT));
+//        } catch (BadPaddingException | IllegalBlockSizeException e) {
+//            e.printStackTrace();
+//        }
+//        //Convert the decrypted password back to a string.
+//        String passw = new String(truePass, StandardCharsets.UTF_8);
+//        Log.d("body", lichaam);
+//        String[] opgebroken = lichaam.split("name=\"csrfmiddlewaretoken\" value=\"");
+//        String[] breukjes = opgebroken[1].split("\">");
+//        String middelToken = breukjes[0];
+//        String[] splitsing = lichaam.split("var csrf_token = '");
+//        String[] dilemma = splitsing[1].split("';");
+//        String csrf = dilemma[0];
+//        Log.d("tokens", "middel= " + middelToken);
+//        Log.d("tokens", "csrf= " + csrf);
+//        String gegevens = null;
+//        try {
+//            gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(middelToken, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
+//        } catch (UnsupportedEncodingException e) {
+//            throw new RuntimeException(e);
+//        }
+////        android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
+////        oven.setCookie("https://" + server, "csrftoken=" + csrf);
+//        myWebView.postUrl("https://" + server + "/login", gegevens.getBytes());
+//    }
+    public void getMiddleWareTokenAndLogIn(String server, String name, String passw) throws IOException {
         //Het idee is dat deze functie de loginpagina van de server laadt en dan de 'csrfmiddlewaretoken' uit het inlogformulier haalt,
         //Zodat dat dan gebruikt kan worden bij het inloggen.
-        String token;
-        InputStream ina;
-        URL url = new URL("https://" + server + "/login");
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-        try {
-            ina = new BufferedInputStream(urlConnection.getInputStream());
-            byte[] pagina = null;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                pagina = ina.readAllBytes();
+        Thread draadje = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    URL url = new URL("https://" + server + "/login");
+                    CookieManager koekManager = new CookieManager();
+                    CookieHandler.setDefault(koekManager);
+                    CookieStore bakker = koekManager.getCookieStore();
+                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                    try {
+                        InputStream ina = new BufferedInputStream(urlConnection.getInputStream());
+                        byte[] pagina = null;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            pagina = ina.readAllBytes();
+                        } else {
+                            ina.read(pagina, 0, ina.available());
+                        }
+                        try {
+                            ina.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        String zooi = new String(pagina);
+                        String[] opgebroken = zooi.split("name=\"csrfmiddlewaretoken\" value=\"");
+                        String[] breukjes = opgebroken[1].split("\">");
+                        String token = breukjes[0];
+                        String gegevens = null;
+
+                        String speculaas = "", THT = "";
+                        List<HttpCookie> koektrommel = bakker.get(URI.create("https://" + server));
+                        //Log.d("koek", koektrommel.toString());
+                        for (int i = 0; i < koektrommel.size(); ++i) {
+                            HttpCookie koekje = koektrommel.get(i);
+                            if (Objects.equals(koekje.getName(), "csrftoken")) {
+                                speculaas = koekje.toString();
+                                THT = String.valueOf(koekje.getMaxAge());
+                                //Log.d("domein", koekje.getDomain());
+                            }
+                        }
+                        try {
+                            gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(token, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
+                        } catch (UnsupportedEncodingException e) {
+                            throw new RuntimeException(e);
+                        }
+                        String finalGegevens = gegevens;
+                        //Log.d("token", speculaas);
+                        String finalSpeculaas = speculaas;
+                        String finalTHT = THT;
+                        runOnUiThread(new Runnable() {
+                                          @Override
+                                          public void run() {
+
+                                              android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
+                                              oven.setCookie("https://" + server, finalSpeculaas + "; Max-Age=" + finalTHT + "; Path=/; SameSite=Lax; Secure");
+                                              myWebView.postUrl("https://" + server + "/login?next=/", finalGegevens.getBytes());
+                                          }
+                                      });
+
+                    } finally {
+                        urlConnection.disconnect();
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
-            try {
-                ina.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            String zooi = new String(pagina);
-            String[] opgebroken = zooi.split("name=\"csrfmiddlewaretoken\" value=");
-            String[] breukjes = opgebroken[1].split("\">");
-            token = breukjes[0];
-        } finally {
-            urlConnection.disconnect();
-        }
-        return token;
+        });
+        draadje.start();
+        //return token;
     }
     private final ActivityResultLauncher<ScanOptions> barcodeLanceerder = registerForActivityResult(new ScanContract(),
             result -> {
