@@ -337,7 +337,8 @@ public class StartActivity extends AppCompatActivity {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             pagina = ina.readAllBytes();
                         } else {
-                            ina.read(pagina, 0, ina.available());
+                            pagina = new byte[30000];
+                            ina.read(pagina);
                         }
                         try {
                             ina.close();
