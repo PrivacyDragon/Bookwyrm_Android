@@ -237,106 +237,37 @@ public class StartActivity extends AppCompatActivity {
 //          android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
           //myWebView.loadUrl("javascript:this.document.location.href = 'source://' + encodeURI(document.documentElement.outerHTML);");
         try {
-            getMiddleWareTokenAndLogIn(server, name, passw);
+            getMiddleWareTokenAndLogIn(server, name, passw); //This should get the login page, retreive the csrf-middlewaretoken, and then log the user in using a POST-request.
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
 
     }
-//    public void logIn(String lichaam) {
-//        //First, verkrijg the user credentials.
-//        //The user credentials are stored in the shared preferences, so first they have to be read from there.
-//        String defaultValue = "none";
-//        SharedPreferences sharedPref = StartActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
-//        String server = sharedPref.getString(getString(R.string.server), defaultValue);
-//        SharedPreferences sharedPrefName = StartActivity.this.getSharedPreferences(getString(R.string.name), Context.MODE_PRIVATE);
-//        String name = sharedPrefName.getString(getString(R.string.name), defaultValue);
-//        SharedPreferences sharedPrefPass = StartActivity.this.getSharedPreferences(getString(R.string.pw), Context.MODE_PRIVATE);
-//        String pass = sharedPrefPass.getString(getString(R.string.pw), defaultValue);
-//        SharedPreferences sharedPrefMagic = StartActivity.this.getSharedPreferences(getString(R.string.q), Context.MODE_PRIVATE);
-//        String codeMagic = sharedPrefMagic.getString(getString(R.string.q), defaultValue);
-//        //Then all the decryption stuff has to happen. There are a lot of try-catch stuff, because apparently that seems to be needed.
-//        //First get the keystore thing.
-//        KeyStore keyStore = null;
-//        try {
-//            keyStore = KeyStore.getInstance("AndroidKeyStore");
-//        } catch (KeyStoreException e) {
-//            e.printStackTrace();
-//        }
-//        //Then, load it. or something. To make sure that it can be used.
-//        try {
-//            keyStore.load(null);
-//        } catch (CertificateException | IOException | NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        }
-//        //Next, retrieve the key to be used for the decryption.
-//        Key DragonLikeKey = null;
-//        try {
-//            DragonLikeKey = keyStore.getKey("BookWyrm", null);
-//        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
-//            e.printStackTrace();
-//        }
-//        //Do something with getting the/a cipher or something.
-//        Cipher c = null;
-//        try {
-//            c = Cipher.getInstance("AES/GCM/NoPadding");
-//        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-//            e.printStackTrace();
-//        }
-//        //And then initiating the cipher, so it can be used.
-//        try {
-//            assert c != null;
-//            c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, codeMagic.getBytes()));
-//        } catch (InvalidAlgorithmParameterException | InvalidKeyException e) {
-//            e.printStackTrace();
-//        }
-//        //Decrypt the password!
-//        byte[] truePass = null;
-//        try {
-//            truePass = c.doFinal(Base64.decode(pass, Base64.DEFAULT));
-//        } catch (BadPaddingException | IllegalBlockSizeException e) {
-//            e.printStackTrace();
-//        }
-//        //Convert the decrypted password back to a string.
-//        String passw = new String(truePass, StandardCharsets.UTF_8);
-//        Log.d("body", lichaam);
-//        String[] opgebroken = lichaam.split("name=\"csrfmiddlewaretoken\" value=\"");
-//        String[] breukjes = opgebroken[1].split("\">");
-//        String middelToken = breukjes[0];
-//        String[] splitsing = lichaam.split("var csrf_token = '");
-//        String[] dilemma = splitsing[1].split("';");
-//        String csrf = dilemma[0];
-//        Log.d("tokens", "middel= " + middelToken);
-//        Log.d("tokens", "csrf= " + csrf);
-//        String gegevens = null;
-//        try {
-//            gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(middelToken, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
-//        } catch (UnsupportedEncodingException e) {
-//            throw new RuntimeException(e);
-//        }
-////        android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
-////        oven.setCookie("https://" + server, "csrftoken=" + csrf);
-//        myWebView.postUrl("https://" + server + "/login", gegevens.getBytes());
-//    }
+
     public void getMiddleWareTokenAndLogIn(String server, String name, String passw) throws IOException {
         //Het idee is dat deze functie de loginpagina van de server laadt en dan de 'csrfmiddlewaretoken' uit het inlogformulier haalt,
         //Zodat dat dan gebruikt kan worden bij het inloggen.
+        //Becuase network operations cannot be done on the main/ui thread, create a new thread for this complete function. Yay!
         Thread draadje = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+                    //Load the login page, and do not forget to take some cookies.
                     URL url = new URL("https://" + server + "/login");
                     CookieManager koekManager = new CookieManager();
                     CookieHandler.setDefault(koekManager);
                     CookieStore bakker = koekManager.getCookieStore();
                     HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                     try {
+                        //Get the input stream, and move it all into a byte array.
                         InputStream ina = new BufferedInputStream(urlConnection.getInputStream());
                         byte[] pagina = null;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             pagina = ina.readAllBytes();
                         } else {
+                            //I truly hope that this byte array will always be big enough...
+                            //The Tiramisu+ way is much better...
                             pagina = new byte[30000];
                             ina.read(pagina);
                         }
@@ -345,23 +276,31 @@ public class StartActivity extends AppCompatActivity {
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
+                        //And now create a string out of the byte array, so we can retreive the middleware token.
                         String zooi = new String(pagina);
+                        //Very easy to get the token by taking the text that it is preceded by in the raw html as the regex for a split() function!
                         String[] opgebroken = zooi.split("name=\"csrfmiddlewaretoken\" value=\"");
+                        //For that gives as second element the token, followed by all the following html code. Then strip that code off, using the immediately following characters as regex.
                         String[] breukjes = opgebroken[1].split("\">");
+                        //Of course, the token is then the first element in our array.
                         String token = breukjes[0];
                         String gegevens = null;
-
+                        //Initiate some strings to use for the delicious csrf cookie.
                         String speculaas = "", THT = "";
+                        //How to get the cookies? First get the cookie collection, the cookie box so to say, and then...
                         List<HttpCookie> koektrommel = bakker.get(URI.create("https://" + server));
                         //Log.d("koek", koektrommel.toString());
+                        //... for every cookie in it check to see if it is the csrftoken named cookie.
                         for (int i = 0; i < koektrommel.size(); ++i) {
                             HttpCookie koekje = koektrommel.get(i);
                             if (Objects.equals(koekje.getName(), "csrftoken")) {
+                                //If it is the csrftoken cookie, get the value of it, and the expiration date of it.
                                 speculaas = koekje.toString();
                                 THT = String.valueOf(koekje.getMaxAge());
                                 //Log.d("domein", koekje.getDomain());
                             }
                         }
+                        //And then set the data string up for use in the POST request, with the csrf middleware token, the username, and the password.
                         try {
                             gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(token, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
                         } catch (UnsupportedEncodingException e) {
@@ -371,17 +310,22 @@ public class StartActivity extends AppCompatActivity {
                         //Log.d("token", speculaas);
                         String finalSpeculaas = speculaas;
                         String finalTHT = THT;
+                        //Then we have to run a bit of code on the main (UI) thread. To be able to work with the webview...
                         runOnUiThread(new Runnable() {
                                           @Override
                                           public void run() {
-
+                                              //First we have to get the cookie manager of the webview, so we can hand it the csrf cookie.
+                                              //Without being fed the correct csrf cookie, the Wyrm will refuse our request. The wyrm is a very picky eater!
                                               android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
+                                              //Bake the cookie into the webview.
                                               oven.setCookie("https://" + server, finalSpeculaas + "; Max-Age=" + finalTHT + "; Path=/; SameSite=Lax; Secure");
+                                              //And then finally it is time to send a POST request from the webview to log in.
                                               myWebView.postUrl("https://" + server + "/login?next=/", finalGegevens.getBytes());
                                           }
                                       });
 
                     } finally {
+                        //We should not forget closing the connection we used for hearing what csrf cookie and token we needed.
                         urlConnection.disconnect();
                     }
                 } catch (Exception e) {
@@ -389,6 +333,8 @@ public class StartActivity extends AppCompatActivity {
                 }
             }
         });
+        //^Here ends all that new Thread() code.
+        //⇓Run all the code in the thread.
         draadje.start();
         //return token;
     }
