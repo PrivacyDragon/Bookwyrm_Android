@@ -10,11 +10,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -33,17 +33,10 @@ import androidx.core.content.ContextCompat;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
-import java.io.BufferedInputStream;
+import org.conscrypt.Conscrypt;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.CookieStore;
-import java.net.HttpCookie;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
@@ -52,10 +45,9 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.List;
-import java.util.Objects;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -63,10 +55,20 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
 
+import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 public class StartActivity extends AppCompatActivity {
     WebView myWebView;
     ProgressBar LoadIndicator;
     public ValueCallback<Uri[]> omhooglader;
+    String putje = "";
+    String sessie = "";
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +91,7 @@ public class StartActivity extends AppCompatActivity {
                 });
         myWebView = (WebView) findViewById(R.id.webview);
         myWebView.setVisibility(View.GONE);
+        myWebView.getSettings().setUserAgentString(getString(R.string.gebruikersagent));
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.addJavascriptInterface(new Object()
         {
@@ -236,11 +239,32 @@ public class StartActivity extends AppCompatActivity {
 //          LoadIndicator.setVisibility(View.VISIBLE);
 //          android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
           //myWebView.loadUrl("javascript:this.document.location.href = 'source://' + encodeURI(document.documentElement.outerHTML);");
-        try {
-            getMiddleWareTokenAndLogIn(server, name, passw); //This should get the login page, retreive the csrf-middlewaretoken, and then log the user in using a POST-request.
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        //try {
+            //See if we are already logged in.
+            CookieManager oven = CookieManager.getInstance();
+            String koek = oven.getCookie("https://" + server);
+            if (koek != null) {
+                if (koek.indexOf("sessionid") != -1) {
+                    myWebView.loadUrl("https://" + server);
+                } else {
+                    //This should get the login page, retreive the csrf-middlewaretoken, and then log the user in using a POST-request.
+                    try {
+                        getMiddleWareTokenAndLogIn(server, name, passw);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            } else {
+                //This should get the login page, retreive the csrf-middlewaretoken, and then log the user in using a POST-request.
+                try {
+                    getMiddleWareTokenAndLogIn(server, name, passw);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        //} catch (IOException e) {
+        //    throw new RuntimeException(e);
+        //}
 
 
     }
@@ -254,79 +278,115 @@ public class StartActivity extends AppCompatActivity {
             public void run() {
                 try {
                     //Load the login page, and do not forget to take some cookies.
-                    URL url = new URL("https://" + server + "/login");
-                    CookieManager koekManager = new CookieManager();
-                    CookieHandler.setDefault(koekManager);
-                    CookieStore bakker = koekManager.getCookieStore();
-                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                    try {
-                        //Get the input stream, and move it all into a byte array.
-                        InputStream ina = new BufferedInputStream(urlConnection.getInputStream());
-                        byte[] pagina = null;
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            pagina = ina.readAllBytes();
-                        } else {
-                            //I truly hope that this byte array will always be big enough...
-                            //The Tiramisu+ way is much better...
-                            pagina = new byte[30000];
-                            ina.read(pagina);
+                    Security.insertProviderAt(Conscrypt.newProvider(), 1);
+                    //URL url = new URL("https://" + server + "/");
+                    String speculaas = "";
+                    String speculaasBeslag = "";
+                    //The login page loading is done using OkHttpClient.
+                    OkHttpClient client = new OkHttpClient();
+                    Request aanvraag = new Request.Builder()
+                            .url("https://" + server + "/")
+                            .header("User-Agent", getString(R.string.gebruikersagent))
+                            .build();
+                    //Get an answer!
+                    try (Response antwoord = client.newCall(aanvraag).execute()) {
+                        if (!antwoord.isSuccessful()) throw new IOException("Unexpected code " + antwoord);
+                        //Search the headers for the 'set-cookie' header so we can eat a cookie!
+                        Headers cenna = antwoord.headers();
+                        for (int i = 0; i < cenna.size(); i++) {
+                            if (cenna.name(i).equals("set-cookie")) {
+                                speculaas = cenna.value(i);
+                                speculaasBeslag = speculaas.split(";")[0];
+                            }
                         }
-                        try {
-                            ina.close();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        //And now create a string out of the byte array, so we can retreive the middleware token.
-                        String zooi = new String(pagina);
+                        //And then get the HTML body.
+                        assert antwoord.body() != null;
+                        String zooi = antwoord.body().string();
+//                    CookieManager koekManager = new CookieManager();
+//                    CookieHandler.setDefault(koekManager);
+//                    CookieStore bakker = koekManager.getCookieStore();
+//                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+//                    try {
+//                        InputStream ina = new BufferedInputStream(urlConnection.getInputStream());
+//                        byte[] pagina = null;
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                            pagina = ina.readAllBytes();
+//                        } else {
+//                            //I truly hope that this byte array will always be big enough...
+//                            //The Tiramisu+ way is much better...
+//                            pagina = new byte[30000];
+//                            ina.read(pagina);
+//                        }
+//                        try {
+//                            ina.close();
+//                        } catch (IOException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                        //We should not forget closing the connection we used for hearing what csrf cookie and token we needed.
+//                        urlConnection.disconnect();
+//                        //And now create a string out of the byte array, so we can retreive the middleware token.
+//                        String zooi = new String(pagina);
                         //Very easy to get the token by taking the text that it is preceded by in the raw html as the regex for a split() function!
                         String[] opgebroken = zooi.split("name=\"csrfmiddlewaretoken\" value=\"");
                         //For that gives as second element the token, followed by all the following html code. Then strip that code off, using the immediately following characters as regex.
                         String[] breukjes = opgebroken[1].split("\">");
                         //Of course, the token is then the first element in our array.
                         String token = breukjes[0];
+                        //Log.d("botbreuk", token);
                         String gegevens = null;
                         //Initiate some strings to use for the delicious csrf cookie.
-                        String speculaas = "", THT = "";
-                        //How to get the cookies? First get the cookie collection, the cookie box so to say, and then...
-                        List<HttpCookie> koektrommel = bakker.get(URI.create("https://" + server));
-                        //Log.d("koek", koektrommel.toString());
-                        //... for every cookie in it check to see if it is the csrftoken named cookie.
-                        for (int i = 0; i < koektrommel.size(); ++i) {
-                            HttpCookie koekje = koektrommel.get(i);
-                            if (Objects.equals(koekje.getName(), "csrftoken")) {
-                                //If it is the csrftoken cookie, get the value of it, and the expiration date of it.
-                                speculaas = koekje.toString();
-                                THT = String.valueOf(koekje.getMaxAge());
-                                //Log.d("domein", koekje.getDomain());
-                            }
-                        }
+                        //String speculaas = "", THT = "";
+//                        //How to get the cookies? First get the cookie collection, the cookie box so to say, and then...
+//                        List<HttpCookie> koektrommel = bakker.get(URI.create("https://" + server));
+//                        Log.d("koek", koektrommel.toString());
+//                        //... for every cookie in it check to see if it is the csrftoken named cookie.
+//                        for (int i = 0; i < koektrommel.size(); ++i) {
+//                            HttpCookie koekje = koektrommel.get(i);
+//                            if (Objects.equals(koekje.getName(), "csrftoken")) {
+//                                //If it is the csrftoken cookie, get the value of it, and the expiration date of it.
+//                                speculaas = koekje.toString();
+//                                THT = String.valueOf(koekje.getMaxAge());
+//                                //Log.d("domein", koekje.getDomain());
+//                            }
+//                        }
                         //And then set the data string up for use in the POST request, with the csrf middleware token, the username, and the password.
                         try {
                             gegevens = "csrfmiddlewaretoken=" + URLEncoder.encode(token, "UTF-8") + "&localname=" + URLEncoder.encode(name, "UTF-8") + "&password=" + URLEncoder.encode(passw, "UTF-8");
                         } catch (UnsupportedEncodingException e) {
                             throw new RuntimeException(e);
                         }
+                        RequestBody keurslijf = new FormBody.Builder()
+                                .add("csrfmiddlewaretoken", token)
+                                .add("localname", name)
+                                .add("password", passw)
+                                .build();
+
                         String finalGegevens = gegevens;
-                        //Log.d("token", speculaas);
+                        //Log.d("gegevens", finalGegevens);
+                        //Log.d("beslag", speculaasBeslag);
                         String finalSpeculaas = speculaas;
-                        String finalTHT = THT;
+                        //String finalTHT = THT;
+                        logInAndGetHTML(server, keurslijf, speculaasBeslag);
                         //Then we have to run a bit of code on the main (UI) thread. To be able to work with the webview...
                         runOnUiThread(new Runnable() {
-                                          @Override
-                                          public void run() {
-                                              //First we have to get the cookie manager of the webview, so we can hand it the csrf cookie.
-                                              //Without being fed the correct csrf cookie, the Wyrm will refuse our request. The wyrm is a very picky eater!
-                                              android.webkit.CookieManager oven = android.webkit.CookieManager.getInstance();
-                                              //Bake the cookie into the webview.
-                                              oven.setCookie("https://" + server, finalSpeculaas + "; Max-Age=" + finalTHT + "; Path=/; SameSite=Lax; Secure");
-                                              //And then finally it is time to send a POST request from the webview to log in.
-                                              myWebView.postUrl("https://" + server + "/login?next=/", finalGegevens.getBytes());
-                                          }
-                                      });
+                            @Override
+                            public void run() {
+                                //First we have to get the cookie manager of the webview, so we can hand it the csrf cookie.
+                                //Without being fed the correct csrf cookie, the Wyrm will refuse our request. The wyrm is a very picky eater!
+                                CookieManager oven = CookieManager.getInstance();
+                                //Bake the cookie into the webview.
+                                oven.setCookie("https://" + server, finalSpeculaas);
+                                //And bake the session cookie as well.
+                                oven.setCookie("https://" + server, sessie);
+                                //And then finally it is time to send a POST request from the webview to log in.
+                                //myWebView.postUrl("https://" + server + "/login?next=/", finalGegevens.getBytes());
+                                myWebView.loadDataWithBaseURL("https://" + server, putje, null, null, "https://" + server + "/login");
+                            }
+                        });
 
                     } finally {
-                        //We should not forget closing the connection we used for hearing what csrf cookie and token we needed.
-                        urlConnection.disconnect();
+//                        //We should not forget closing the connection we used for hearing what csrf cookie and token we needed.
+//                        urlConnection.disconnect();
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -336,7 +396,75 @@ public class StartActivity extends AppCompatActivity {
         //^Here ends all that new Thread() code.
         //⇓Run all the code in the thread.
         draadje.start();
-        //return token;
+    }
+    public void logInAndGetHTML(String server, RequestBody lichaam, String speculoos) throws IOException {
+//        Thread kabel = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    //Load the login page, and do not forget to take some cookies.
+        Security.insertProviderAt(Conscrypt.newProvider(), 1);
+        //Create a client using CookieMonster, so we can retrieve cookies from the redirect.
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addNetworkInterceptor(new CookieMonster())
+                .build();
+        //URL url = new URL("https://" + server + "/");
+        //CookieManager koekManager = new CookieManager();
+        //CookieHandler.setDefault(koekManager);
+        //CookieStore bakker = koekManager.getCookieStore();
+        Request verzoek = new Request.Builder()
+                .url("https://" + server + "/login?next=/")
+                .header("User-Agent", getString(R.string.gebruikersagent))
+                .addHeader("origin", "https://" + server)
+                .addHeader("cookie", speculoos)
+                .post(lichaam)
+                .build();
+        try (Response reactie = client.newCall(verzoek).execute()) {
+            if (!reactie.isSuccessful())
+                throw new IOException("Unexpected code " + reactie);
+            assert reactie.body() != null;
+            putje = reactie.body().string();
+        }
+
+//                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+//                    urlConnection.setRequestProperty("origin", "https://" + server);
+//                    byte[] paarden = gegevens.getBytes();
+//                    try {
+//                        urlConnection.setDoOutput(true);
+//                        urlConnection.setChunkedStreamingMode(0);
+//
+//                        OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
+//                        out.write(paarden);
+//                        out.flush();
+//
+//                        InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+//                        byte[] pagina = null;
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                            pagina = in.readAllBytes();
+//                        } else {
+//                            //I truly hope that this byte array will always be big enough...
+//                            //The Tiramisu+ way is much better...
+//                            pagina = new byte[30000];
+//                            in.read(pagina);
+//                        }
+//                        try {
+//                            in.close();
+//                        } catch (IOException e) {
+//                            throw new RuntimeException(e);
+//                        }
+//                        html[0] = new String(pagina);
+//                    } finally {
+//                        urlConnection.disconnect();
+//                    }
+
+//                } catch (Exception e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//        });
+//        kabel.start();
+        //Log.d("lichaam", putje);
+        //return putje;
     }
     private final ActivityResultLauncher<ScanOptions> barcodeLanceerder = registerForActivityResult(new ScanContract(),
             result -> {
@@ -394,6 +522,33 @@ public class StartActivity extends AppCompatActivity {
         }
         return super.onKeyLongPress(keyCode, event);
     }
+    final class CookieMonster implements Interceptor {
+        @Override public Response intercept(Interceptor.Chain chain) throws IOException {
+            //Om ingelogd te blijven moeten we het sessiekoekje aan kunnen bieden.
+            //Die moeten we dan wel eerst uit het koekblik pakken!
+            Request eersteVerzoek = chain.request();
+            //Eerst moeten we controleren of er al een sessiekoekje is. Als dat niet zo is, dan is dit het echte eerste verzoek.
+            if (sessie.isEmpty()) {
+                //In dat geval halen we de reactie op om het koekje te kunnen pakken!
+                Response eersteReactie = chain.proceed(chain.request());
+                Headers hoofden = eersteReactie.headers();
+                for (int i = 0; i < hoofden.size(); i++) {
+                    if (hoofden.name(i).equals("set-cookie") && hoofden.value(i).startsWith("session")) {
+                        sessie = hoofden.value(i);
+                    }
+                }
+                //Nadat we het koekje hebben moet de reactie doorgebriefd worden aan de 'client',
+                //die dan het volgende verzoek zal gaan doen vanwege de 302-redirect bij het inloggen.
+                return eersteReactie;
+            }
+            //Het koekje is er! Hoera!
+            //Het nieuwe verzoek moet wel met het sessiekoekje verzonden worden, anders zijn we alsnog niet ingelogd!
+            Request nieuwVerzoek = eersteVerzoek.newBuilder()
+                    .addHeader("cookie", sessie)
+                    .build();
+            return chain.proceed(nieuwVerzoek);
+        }
+    }
     //Here is code to make sure that links of the bookwyrm server are handled within the webview client, instead of having it open in the default browser.
     //Yes, I used the web for this too.
     private class MyWebViewClient extends WebViewClient {
@@ -415,6 +570,8 @@ public class StartActivity extends AppCompatActivity {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             LoadIndicator.setVisibility(View.VISIBLE);
+            //CookieManager oven = CookieManager.getInstance();
+            //Log.d("oven", oven.getCookie(url));
         }
     }
 }

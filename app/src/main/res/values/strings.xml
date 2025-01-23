@@ -4,4 +4,5 @@
     <string name="name">blup</string>
     <string name="pw">gloep</string>
     <string name="q">wheeeee</string>
+    <string name="gebruikersagent">Bookwyrm Android/1.3.8</string>
 </resources>
