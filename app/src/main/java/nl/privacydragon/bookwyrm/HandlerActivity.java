@@ -81,7 +81,6 @@ public class HandlerActivity extends AppCompatActivity {
                                          @Override
                                          public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                                              if (omhooglader != null) {
-                                                 //omhooglader.onReceiveValue(null);
                                                  omhooglader = null;
                                              }
                                              omhooglader = filePathCallback;
@@ -95,19 +94,11 @@ public class HandlerActivity extends AppCompatActivity {
                                              return true;
                                          }
                                      });
-        //myWebView.addJavascriptInterface(new HandlerActivity.WebAppInterface(this), "Android");
-        //The user credentials are stored in the shared preferences, so first they have to be read from there.
+        //The name of the user's server is stored in the shared preferences, so first it has to be read from there.
         String defaultValue = "none";
         SharedPreferences sharedPref = HandlerActivity.this.getSharedPreferences(getString(R.string.server), Context.MODE_PRIVATE);
         String server = sharedPref.getString(getString(R.string.server), defaultValue);
-        //SharedPreferences sharedPrefName = HandlerActivity.this.getSharedPreferences(getString(R.string.name), Context.MODE_PRIVATE);
-        //String name = sharedPrefName.getString(getString(R.string.name), defaultValue);
-        //SharedPreferences sharedPrefPass = HandlerActivity.this.getSharedPreferences(getString(R.string.pw), Context.MODE_PRIVATE);
-        //String pass = sharedPrefPass.getString(getString(R.string.pw), defaultValue);
-        //SharedPreferences sharedPrefMagic = HandlerActivity.this.getSharedPreferences(getString(R.string.q), Context.MODE_PRIVATE);
-        //String codeMagic = sharedPrefMagic.getString(getString(R.string.q), defaultValue);
-        //If there is nothing configured yet, the user should be redirected to the main screen for logging in.
-        if (server == "none") {
+        if (server.equals("none")) {
             startActivity(new Intent(HandlerActivity.this, nl.privacydragon.bookwyrm.MainActivity.class));
         }
         String pathMaybe = appLinkData.getPath();
@@ -130,64 +121,6 @@ public class HandlerActivity extends AppCompatActivity {
             toGoServer = "https://" + server;
             startActivity(new Intent(HandlerActivity.this, nl.privacydragon.bookwyrm.StartActivity.class));
         }
-        //Then all the decryption stuff has to happen. There are a lot of try-catch stuff, because apparently that seems to be needed.
-        //First get the keystore thing.
-//        KeyStore keyStore = null;
-//        try {
-//            keyStore = KeyStore.getInstance("AndroidKeyStore");
-//        } catch (KeyStoreException e) {
-//            e.printStackTrace();
-//        }
-//        //Then, load it. or something. To make sure that it can be used.
-//        try {
-//            keyStore.load(null);
-//        } catch (CertificateException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        }
-//        //Next, retrieve the key to be used for the decryption.
-//        Key DragonLikeKey = null;
-//        try {
-//            DragonLikeKey = keyStore.getKey("BookWyrm", null);
-//        } catch (KeyStoreException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (UnrecoverableKeyException e) {
-//            e.printStackTrace();
-//        }
-//        //Do something with getting the/a cipher or something.
-//        Cipher c = null;
-//        try {
-//            c = Cipher.getInstance("AES/GCM/NoPadding");
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchPaddingException e) {
-//            e.printStackTrace();
-//        }
-//        //And then initiating the cipher, so it can be used.
-//        try {
-//            c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, codeMagic.getBytes()));
-//        } catch (InvalidAlgorithmParameterException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeyException e) {
-//            e.printStackTrace();
-//        }
-//        //Decrypt the password!
-//        byte[] truePass = null;
-//        try {
-//            truePass = c.doFinal(Base64.decode(pass, Base64.DEFAULT));
-//        } catch (BadPaddingException e) {
-//            e.printStackTrace();
-//        } catch (IllegalBlockSizeException e) {
-//            e.printStackTrace();
-//        }
-//        //Convert the decrypted password back to a string.
-//        String passw = new String(truePass, StandardCharsets.UTF_8);
-        //String wacht = passw.replaceAll("'", "\\\\'");
 
         //A webviewclient thing is needed for some stuff. To automatically log in, the credentials are put in the form by the javascript that is loaded once the page is fully loaded. Then it is automatically submitted if the current page is the login page.
         String finalToGoServer = toGoServer;
@@ -195,11 +128,6 @@ public class HandlerActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 LoadIndicator.setVisibility(View.GONE);
                 myWebView.setVisibility(View.VISIBLE);
-
-                //view.loadUrl("javascript:(function() { document.getElementById('id_password').value = '" + wacht + "'; ;})()");
-                //view.loadUrl("javascript:(function() { document.getElementById('id_localname').value = '" + name + "'; ;})()");
-                //view.loadUrl("javascript:(function() { if (window.location.href == '" + finalToGoServer + "' && !/(review|generatednote|quotation|comment|book)/i.test(window.location.href)) { document.getElementsByName(\"login\")[0].submit();} ;})()");
-                //view.loadUrl("javascript:(function() { if (window.location.href == 'https://" + server + "') { document.getElementsByName(\"login\")[0].submit();} ;})()");
                 view.loadUrl("javascript:(function() { if (/(review|generatednote|quotation|comment|book)/i.test(window.location.href)) {" +
                                 "blocks = document.getElementsByClassName('block');" +
                                 "for (let element of blocks){" +
@@ -222,8 +150,6 @@ public class HandlerActivity extends AppCompatActivity {
                         "} else {" +
                             "let ISBN = document.createElement(\"div\");" +
                             "ISBN.class = 'control';" +
-                            //"ISBN.class = 'button';" +
-                            //"ISBN.type = 'button';" +
                             "ISBN.innerHTML = '<button class=\"button\" type=\"button\" onclick=\"scan.performClick(this)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" aria-hidden=\"true\"><path fill=\"none\" d=\"M0 0h24v24H0z\"/><path d=\"M4 5v14h16V5H4zM3 3h18a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm3 4h3v10H6V7zm4 0h2v10h-2V7zm3 0h1v10h-1V7zm2 0h3v10h-3V7z\"/></svg><span class=\"is-sr-only\">Search</span></button>';" +
                             "nav = document.getElementsByClassName(\"field has-addons\")[0];" +
                             "nav.appendChild(ISBN);" +
@@ -231,27 +157,6 @@ public class HandlerActivity extends AppCompatActivity {
                         ";})()");
             }
         });
-        /*myWebView.setWebChromeClient(new WebChromeClient(){
-            // Need to accept permissions to use the camera
-            @Override
-            public void onPermissionRequest(PermissionRequest request) {
-                String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-                int grant = ContextCompat.checkSelfPermission(HandlerActivity.this, permission);
-                if (grant != PackageManager.PERMISSION_GRANTED) {
-                    String[] permission_list = new String[1];
-                    permission_list[0] = permission;
-                    ActivityCompat.requestPermissions(HandlerActivity.this, permission_list, 1);
-                }
-                request.grant(request.getResources());
-                final String[] requestedResources = request.getResources();
-                for (String r : requestedResources) {
-                   if (r.equals(PermissionRequest.RESOURCE_PROTECTED_MEDIA_ID)) {
-                      request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
-                      break;
-                   }
-                }
-            }
-        });*/
         //Here, load the login page of the server. That actually does all that is needed.
         myWebView.loadUrl(toGoServer);
     }
@@ -289,8 +194,6 @@ public class HandlerActivity extends AppCompatActivity {
         eisen.setPrompt("SCAN ISBN");
         eisen.setBarcodeImageEnabled(false);
         barcodeLanceerder.launch(eisen);
-        //return "blup";
-        //return "bla";
     }
 
     @Override
