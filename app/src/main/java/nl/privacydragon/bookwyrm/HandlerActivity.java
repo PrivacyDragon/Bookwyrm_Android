@@ -64,7 +64,11 @@ public class HandlerActivity extends AppCompatActivity {
         myWebView.setVisibility(View.GONE);
         myWebView.getSettings().setJavaScriptEnabled(true);
         myWebView.getSettings().setDomStorageEnabled(true);
-        myWebView.getSettings().setAllowFileAccess(true);
+        // The WebView only ever loads the user's configured bookwyrm
+        // server URL (toGoServer), so file:// access is not needed.
+        // Bundled assets under file:///android_asset/ are still
+        // reachable regardless of this flag.
+        myWebView.getSettings().setAllowFileAccess(false);
         myWebView.getSettings().setAllowContentAccess(true);
         myWebView.addJavascriptInterface(new Object()
         {
