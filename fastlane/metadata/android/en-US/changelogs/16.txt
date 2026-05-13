@@ -1,0 +1,5 @@
+* Security improvement (Disable WebView file access in HandlerActivity)
+* Adaptive icon improvement
+* Fix returning to log-in screen bug
+* Dependencies have been updated to newest versions.
+* Compiled for up to Android 15 now.

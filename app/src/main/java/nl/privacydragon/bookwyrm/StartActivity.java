@@ -372,9 +372,13 @@ public class StartActivity extends AppCompatActivity {
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         // Check if the key event was the Back button and if there's history
-        if ((keyCode == KeyEvent.KEYCODE_BACK) && myWebView.canGoBack()) {
-            myWebView.goBack();
-            return true;
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (myWebView.canGoBack()) {
+                myWebView.goBack();
+                return true;
+            } else {
+                return true;
+            }
         }
         // If it wasn't the Back key or there's no web page history, bubble up to the default
         // system behavior (probably exit the activity)
