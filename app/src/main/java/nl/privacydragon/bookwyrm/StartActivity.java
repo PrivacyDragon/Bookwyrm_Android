@@ -433,7 +433,11 @@ public class StartActivity extends AppCompatActivity {
             }
             // Otherwise, it should go to the default browser instead.
             Intent intent = new Intent(Intent.ACTION_VIEW, request.getUrl());
-            startActivity(intent);
+            try {
+                startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                android.util.Log.w("StartActivity", "No app installed to handle " + request.getUrl(), e);
+            }
             return true;
         }
 
