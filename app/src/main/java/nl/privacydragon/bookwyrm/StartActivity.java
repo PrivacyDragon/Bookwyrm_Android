@@ -163,7 +163,7 @@ public class StartActivity extends AppCompatActivity {
         //And then initiating the cipher, so it can be used.
         try {
             assert c != null;
-            c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, codeMagic.getBytes()));
+            c.init(Cipher.DECRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, MainActivity.decodeStoredGcmIv(codeMagic)));
         } catch (InvalidAlgorithmParameterException | InvalidKeyException e) {
             e.printStackTrace();
         }

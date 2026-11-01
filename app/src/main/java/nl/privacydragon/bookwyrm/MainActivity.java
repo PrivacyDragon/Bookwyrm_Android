@@ -24,7 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.Random;
+import java.security.SecureRandom;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -46,17 +46,6 @@ public class MainActivity extends AppCompatActivity {
             if (!"none".equals(server)) {
                 startActivity(new Intent(MainActivity.this, nl.privacydragon.bookwyrm.StartActivity.class));
             }
-        }
-
-        private static String getRandomString() //I just copied this from internet. Yes, I am lazy :). (https://stackoverflow.com/questions/12116092/android-random-string-generator#answer-12116194)
-        {
-            String ALLOWED_CHARACTERS ="0123456789qwertyuiopasdfghjklzxcvbnm!@#$%^&*()_+=][{}";
-            final Random random=new Random();
-            final StringBuilder sb=new StringBuilder(12);
-            for(int i = 0; i< 12; ++i) {
-                sb.append(ALLOWED_CHARACTERS.charAt(random.nextInt(ALLOWED_CHARACTERS.length())));
-            }
-            return sb.toString();
         }
 
         public void LogIn(View view) throws IllegalBlockSizeException, BadPaddingException, KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, UnrecoverableKeyException, NoSuchPaddingException, InvalidKeyException {
@@ -86,11 +75,13 @@ public class MainActivity extends AppCompatActivity {
                                     .build());
                     keyGenerator.generateKey();
                 }
-                //Grab the key and initiate the encryption process stuff. For this, a random fixed IV code is generated.
+                //Grab the key and initiate the encryption process stuff with a freshly generated GCM IV.
                 Key DragonLikeKey = keyStore.getKey("BookWyrm", null);
                 Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
-                String magicCode = getRandomString();
-                c.init(Cipher.ENCRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, magicCode.getBytes()));
+                byte[] iv = new byte[12];
+                new SecureRandom().nextBytes(iv);
+                c.init(Cipher.ENCRYPT_MODE, DragonLikeKey, new GCMParameterSpec(128, iv));
+                String storedIv = encodeStoredGcmIv(iv);
                 //And now do the encryption!
                 byte[] passBytes = c.doFinal(pass.getBytes());
                 String passUse = Base64.encodeToString(passBytes, Base64.DEFAULT);
@@ -112,10 +103,41 @@ public class MainActivity extends AppCompatActivity {
                 editorName.apply();
                 editorPass.putString(getString(R.string.pw), passUse);
                 editorPass.apply();
-                editorMagic.putString(getString(R.string.q), magicCode);
+                editorMagic.putString(getString(R.string.q), storedIv);
                 editorMagic.apply();
                 //Once all that has been done, Bookwyrm can be opened and such!
                 startActivity(new Intent(MainActivity.this, nl.privacydragon.bookwyrm.StartActivity.class));
             }
+        }
+
+        static String encodeStoredGcmIv(byte[] iv) {
+            if (iv.length != 12) {
+                throw new IllegalArgumentException("GCM IV must contain 12 bytes");
+            }
+            StringBuilder encodedIv = new StringBuilder("gcm1:");
+            for (byte value : iv) {
+                encodedIv.append(Character.forDigit((value >>> 4) & 0x0f, 16));
+                encodedIv.append(Character.forDigit(value & 0x0f, 16));
+            }
+            return encodedIv.toString();
+        }
+
+        static byte[] decodeStoredGcmIv(String storedIv) {
+            if (!storedIv.startsWith("gcm1:")) {
+                return storedIv.getBytes();
+            }
+            if (storedIv.length() != 29) {
+                throw new IllegalArgumentException("Stored GCM IV must contain 12 hexadecimal bytes");
+            }
+            byte[] iv = new byte[12];
+            for (int i = 0; i < iv.length; i++) {
+                int high = Character.digit(storedIv.charAt(5 + (i * 2)), 16);
+                int low = Character.digit(storedIv.charAt(6 + (i * 2)), 16);
+                if (high < 0 || low < 0) {
+                    throw new IllegalArgumentException("Stored GCM IV must contain hexadecimal bytes");
+                }
+                iv[i] = (byte) ((high << 4) | low);
+            }
+            return iv;
         }
     }
